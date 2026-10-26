@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Expense Tracker</title>
+    <title>Daily Expense Tracker with Note Viewer & Excel Export</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -12,7 +12,7 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        sans: ['Inter', 'Padauk', 'sans-serif'],
                     },
                 }
             }
@@ -20,15 +20,17 @@
     </script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Font Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Padauk:wght@400;700&display=swap" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS for pure Excel (.xlsx) Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans min-h-screen flex flex-col antialiased transition-colors duration-200">
 
     <!-- Toast Notification -->
-    <div id="toast" class="fixed top-5 right-5 z-50 transform translate-y-[-100%] opacity-0 transition-all duration-300 pointer-events-none bg-slate-900/90 dark:bg-slate-100/90 text-white dark:text-slate-900 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-3 text-xs font-medium border border-slate-700/30">
+    <div id="toast" class="fixed top-5 right-5 z-50 transform -translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-slate-900/90 dark:bg-slate-100/90 text-white dark:text-slate-900 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-3 text-xs font-medium border border-slate-700/30">
         <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 dark:text-emerald-600 text-base"></i>
         <span id="toast-msg">Success</span>
     </div>
@@ -42,7 +44,7 @@
                 </div>
                 <div>
                     <h1 class="text-base font-bold text-slate-900 dark:text-white leading-none">Expense Tracker</h1>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Daily Expense & Sheets Sync</p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Daily Expense & Notes Sync</p>
                 </div>
             </div>
             
@@ -52,7 +54,7 @@
                     <i id="theme-icon" class="fa-solid fa-moon text-sm"></i>
                 </button>
 
-                <!-- Sheets Integration Button (Direct URL Config) -->
+                <!-- Sheets Integration Button -->
                 <button onclick="openSheetsModal()" class="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold transition border border-emerald-500/20">
                     <i class="fa-solid fa-file-excel text-sm"></i>
                     <span class="hidden sm:inline">Google Sheets Sync</span>
@@ -112,11 +114,11 @@
                 </div>
                 
                 <!-- Time Range Filter for Chart & List -->
-                <div class="flex items-center bg-slate-100 dark:bg-slate-800/60 p-1 rounded-2xl text-xs font-medium">
-                    <button onclick="setTimePeriod('daily')" id="period-daily" class="px-3 py-1.5 rounded-xl transition-all font-semibold bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm">Daily</button>
+                <div class="flex items-center bg-slate-100 dark:bg-slate-800/60 p-1 rounded-2xl text-xs font-medium overflow-x-auto">
+                    <button onclick="setTimePeriod('daily')" id="period-daily" class="px-3 py-1.5 rounded-xl transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white">Daily</button>
                     <button onclick="setTimePeriod('weekly')" id="period-weekly" class="px-3 py-1.5 rounded-xl transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white">Weekly</button>
                     <button onclick="setTimePeriod('weekend')" id="period-weekend" class="px-3 py-1.5 rounded-xl transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white">Weekend</button>
-                    <button onclick="setTimePeriod('all')" id="period-all" class="px-3 py-1.5 rounded-xl transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white">All</button>
+                    <button onclick="setTimePeriod('all')" id="period-all" class="px-3 py-1.5 rounded-xl transition-all font-semibold bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm">All</button>
                 </div>
             </div>
 
@@ -161,23 +163,23 @@
                             <button type="button" id="btn-income" onclick="setType('income')" class="py-2 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all">Income (+)</button>
                         </div>
 
-                        <!-- Date Field (Top for both or standard) -->
+                        <!-- Date Field -->
                         <div>
                             <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">ရက်စွဲ (Date)</label>
                             <input type="date" id="tx-date" required class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-500 transition">
                         </div>
 
-                        <!-- Description / Title (Expense Only) -->
-                        <div id="field-title-container">
-                            <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">အကြောင်းအရာ (Title)</label>
-                            <input type="text" id="tx-title" placeholder="ဥပမာ- မနက်စာ၊ ကားခ" class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-500 transition">
+                        <!-- Title Field -->
+                        <div id="title-container">
+                            <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">ခေါင်းစဉ် / အကြောင်းအရာ (Title)</label>
+                            <input type="text" id="tx-title" required placeholder="ဥပမာ- မနက်စာ၊ လစာ" class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-500 transition">
                         </div>
 
                         <!-- Category -->
-                        <div>
+                        <div id="category-container">
                             <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">အမျိုးအစား (Category)</label>
                             <select id="tx-category" class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-500 transition">
-                                <!-- Options dynamically rendered via JS depending on Type -->
+                                <!-- Options dynamically rendered via JS -->
                             </select>
                         </div>
 
@@ -187,10 +189,10 @@
                             <input type="number" id="tx-amount" min="1" required placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-500 transition">
                         </div>
 
-                        <!-- Remarks / Note (Income Field) -->
-                        <div id="field-remarks-container" class="hidden">
-                            <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">မှတ်ချက် (Remarks / Note)</label>
-                            <input type="text" id="tx-remarks" placeholder="ဥပမာ- လစဉ်လစာ သို့မဟုတ် Bonus" class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-500 transition">
+                        <!-- Note / Remarks Field (Both Expense & Income) -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">အသေးစိတ် မှတ်ချက် (Note / Remarks)</label>
+                            <textarea id="tx-note" rows="2" placeholder="အသေးစိတ် မှတ်သားချင်သည်များကို ရေးပါ..." class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-500 transition resize-none"></textarea>
                         </div>
 
                         <!-- Submit Button -->
@@ -218,18 +220,19 @@
 
                         <!-- Export Options & Search/Filter Controls -->
                         <div class="flex flex-wrap items-center gap-2">
-                            <button onclick="exportToCSV()" title="Export Excel (CSV)" class="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-600 dark:text-emerald-400 text-xs font-semibold transition border border-emerald-200/50 dark:border-emerald-800/50 flex items-center space-x-1">
-                                <i class="fa-solid fa-file-csv text-sm"></i>
-                                <span>Excel</span>
+                            <!-- Excel Direct Download -->
+                            <button onclick="exportToExcel()" title="Export Excel (.xlsx)" class="px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold transition border border-emerald-500/20 flex items-center space-x-1.5">
+                                <i class="fa-solid fa-file-excel text-sm"></i>
+                                <span>Excel Download</span>
                             </button>
-                            <button onclick="exportToPDF()" title="Export Printable PDF" class="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 text-rose-600 dark:text-rose-400 text-xs font-semibold transition border border-rose-200/50 dark:border-rose-800/50 flex items-center space-x-1">
-                                <i class="fa-solid fa-file-pdf text-sm"></i>
-                                <span>PDF</span>
+                            <button onclick="exportToPDF()" title="Export Printable PDF" class="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold transition border border-rose-500/20 flex items-center space-x-1">
+                                <i class="fa-solid fa-print text-sm"></i>
+                                <span>Print/PDF</span>
                             </button>
                             
                             <div class="relative">
                                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                                <input type="text" id="search" oninput="render()" placeholder="ရှာဖွေရန်..." class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 w-32 sm:w-40 transition">
+                                <input type="text" id="search" oninput="render()" placeholder="ရှာဖွေရန်..." class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 w-28 sm:w-36 transition">
                             </div>
 
                             <select id="filter-type" onchange="render()" class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 transition">
@@ -241,7 +244,7 @@
                     </div>
 
                     <!-- List Container -->
-                    <div id="tx-list" class="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[520px] overflow-y-auto">
+                    <div id="tx-list" class="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[550px] overflow-y-auto">
                         <!-- Items rendered via JS -->
                     </div>
 
@@ -256,51 +259,57 @@
         </div>
     </main>
 
+    <!-- Note Detail View Modal -->
+    <div id="note-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-opacity">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200/80 dark:border-slate-800 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-sticky-note text-amber-500"></i>
+                    <span>အသေးစိတ် မှတ်ချက် (Note Details)</span>
+                </h3>
+                <button onclick="closeNoteModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div>
+                    <span class="text-slate-400">ခေါင်းစဉ်:</span>
+                    <p id="note-modal-title" class="font-bold text-slate-800 dark:text-slate-100 text-sm mt-0.5"></p>
+                </div>
+                <div class="flex justify-between bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">ရက်စွဲ</span>
+                        <span id="note-modal-date" class="font-medium text-slate-700 dark:text-slate-300"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">အမျိုးအစား</span>
+                        <span id="note-modal-category" class="font-medium text-slate-700 dark:text-slate-300"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">ပမာဏ</span>
+                        <span id="note-modal-amount" class="font-bold"></span>
+                    </div>
+                </div>
+                <div>
+                    <span class="text-slate-400">မှတ်ချက်/အကြောင်းအရာ:</span>
+                    <div id="note-modal-body" class="mt-1.5 p-3.5 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-2xl text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed"></div>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
+                <button onclick="closeNoteModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-200 transition">ပိတ်မည်</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Google Sheets Setup Modal -->
     <div id="sheets-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-opacity">
         <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200/80 dark:border-slate-800 space-y-4">
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-                    <i class="fa-solid fa-file-excel text-emerald-500"></i>
-                    <span>Google Sheets နဲ့ ချိတ်ဆက်ရန်</span>
-                </h3>
-                <button onclick="closeSheetsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
-                    <i class="fa-solid fa-xmark text-base"></i>
-                </button>
-            </div>
-
-            <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                <p class="font-medium text-slate-800 dark:text-slate-200">အဆင့် (၁) Google Sheet ထဲတွင် Script ရေးရန်:</p>
-                <ol class="list-decimal list-inside space-y-1 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl font-mono text-[11px] border border-slate-200/80 dark:border-slate-700/50 text-slate-700 dark:text-slate-300">
-                    <li>Google Sheet အသစ်တစ်ခုဖွင့်ပါ။</li>
-                    <li>Extensions > Apps Script ကိုနှိပ်ပါ။</li>
-                    <li>အောက်ပါ Script Code ကို ကူးယူထည့်ပါ:</li>
-                </ol>
-
-                <div class="relative bg-slate-900 text-slate-100 p-3.5 rounded-2xl font-mono text-[10px] overflow-x-auto border border-slate-800">
-                    <pre id="script-code">
-function doPost(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var data = JSON.parse(e.postData.contents);
-  var action = data.action || 'add';
-  
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["ID", "Date", "Title/Remarks", "Type", "Category", "Amount"]);
-  }
-  
-  if (action === 'add') {
-    sheet.appendRow([data.id, data.date, data.title || data.remarks || '', data.type, data.category, data.amount]);
-  } else if (action === 'edit') {
-    var rows = sheet.getDataRange().getValues();
-    for (var i = 1; i < rows.length; i++) {
-      if (rows[i][0] == data.id) {
-    <!-- Simple Google Sheets URL Settings Modal -->
-    <div id="sheets-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-opacity">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200/80 dark:border-slate-800 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
                     <i class="fa-solid fa-link text-emerald-500"></i>
-                    <span>Google Sheet Web App Script URL</span>
+                    <span>Google Sheets Script URL</span>
                 </h3>
                 <button onclick="closeSheetsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
                     <i class="fa-solid fa-xmark text-base"></i>
@@ -308,9 +317,9 @@ function doPost(e) {
             </div>
 
             <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300">
-                <p>VS Code ထဲရှိ script.js (သို့မဟုတ် logic script) ထဲတွင် ထည့်လိုပါက အောက်ပါ URL သို့မဟုတ် Local Storage ထဲတွင် သိမ်းဆည်းနိုင်ပါသည်။</p>
+                <p>Google Apps Script Web App URL ထည့်သွင်း၍ Google Sheet ဖြင့် တိုက်ရိုက် Sync ပြုလုပ်နိုင်ပါသည်။</p>
                 <div>
-                    <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1.5">Google Script URL:</label>
+                    <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1.5">Google Script Web App URL:</label>
                     <input type="url" id="sheet-url-input" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 transition">
                 </div>
             </div>
@@ -327,10 +336,10 @@ function doPost(e) {
         // Categories Definitions
         const expenseCategories = [
             "အစားအသောက်",
-            "ကားဆီ",
-            "ခရီးစရိတ်",
-            "အိမ်စရိတ်",
+            "ကားဆီ / ခရီးစရိတ်",
+            "အိမ်စရိတ် / လျှပ်စစ်",
             "စျေးဝယ်ခြင်း",
+            "ကျန်းမာရေး / ဆေးဝါး",
             "ဖျော်ဖြေရေး",
             "အထွေထွေ"
         ];
@@ -340,7 +349,7 @@ function doPost(e) {
             "စီးပွားရေး (Business)",
             "အလွတ်သဘော (Freelance)",
             "ရင်းနှီးမြှုပ်နှံမှု (Investment)",
-            "လက်ဆောင်/ဆုကြေး (Bonus/Gift)",
+            "လက်ဆောင်/ဆုကြေး (Bonus)",
             "အခြားဝင်ငွေ (Other Income)"
         ];
 
@@ -349,11 +358,7 @@ function doPost(e) {
         let currentType = 'expense';
         let currentPeriod = 'all'; // daily, weekly, weekend, all
         
-        // =========================================================
-        // VS Code ထဲတွင် မိမိ၏ Google Apps Script URL ကို ဒီနေရာမှာ တိုက်ရိုက်ထည့်ပါ:
-        // =========================================================
-        const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgmij11aXbDXrq8EZi3NYLeMxj86YAHuNJQN0QuoEgfiZYLpXHl5V1g6CDYwbu8Jatfg/exec"; 
-
+        const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgmij11aXbDXrq8EZi3NYLeMxj86YAHuNJQN0QuoEgfiZYLp"; 
         let googleSheetUrl = localStorage.getItem('google_sheet_url') || DEFAULT_SCRIPT_URL;
         let editingId = null;
         let chartInstance = null;
@@ -381,7 +386,7 @@ function doPost(e) {
                 localStorage.setItem('app_theme', 'dark');
                 updateThemeIcon('dark');
             }
-            renderChart(); // Redraw chart with theme colors if necessary
+            renderAnalyticsAndChart(filterByPeriod(transactions));
         }
 
         function updateThemeIcon(theme) {
@@ -407,26 +412,25 @@ function doPost(e) {
             currentType = type;
             const expBtn = document.getElementById('btn-expense');
             const incBtn = document.getElementById('btn-income');
-            const titleContainer = document.getElementById('field-title-container');
-            const remarksContainer = document.getElementById('field-remarks-container');
             const amountLabel = document.getElementById('amount-label');
+            const categoryContainer = document.getElementById('category-container');
+            const titleContainer = document.getElementById('title-container');
+            const txTitleInput = document.getElementById('tx-title');
 
             if (type === 'expense') {
                 expBtn.className = "py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm transition-all";
                 incBtn.className = "py-2 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all";
-                
+                amountLabel.textContent = "ထွက်ငွေ ပမာဏ (Expense Amount)";
+                categoryContainer.classList.remove('hidden');
                 titleContainer.classList.remove('hidden');
-                remarksContainer.classList.add('hidden');
-                amountLabel.textContent = "ပမာဏ (Expense Amount)";
-                document.getElementById('tx-title').required = true;
+                txTitleInput.required = true;
             } else {
                 incBtn.className = "py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm transition-all";
                 expBtn.className = "py-2 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all";
-                
-                titleContainer.classList.add('hidden');
-                remarksContainer.classList.remove('hidden');
                 amountLabel.textContent = "ဝင်ငွေ ပမာဏ (Income Amount)";
-                document.getElementById('tx-title').required = false;
+                categoryContainer.classList.add('hidden');
+                titleContainer.classList.add('hidden');
+                txTitleInput.required = false;
             }
 
             updateCategoryDropdown();
@@ -435,13 +439,11 @@ function doPost(e) {
         function updateCategoryDropdown() {
             const catSelect = document.getElementById('tx-category');
             const list = currentType === 'expense' ? expenseCategories : incomeCategories;
-            
             catSelect.innerHTML = list.map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
         function setTimePeriod(period) {
             currentPeriod = period;
-            
             ['daily', 'weekly', 'weekend', 'all'].forEach(p => {
                 const btn = document.getElementById(`period-${p}`);
                 if (p === period) {
@@ -460,7 +462,6 @@ function doPost(e) {
 
             return txList.filter(t => {
                 if (currentPeriod === 'all') return true;
-
                 const txDate = new Date(t.date);
                 if (isNaN(txDate.getTime())) return true;
 
@@ -485,23 +486,22 @@ function doPost(e) {
 
         function addTransaction(e) {
             e.preventDefault();
-            const title = document.getElementById('tx-title').value.trim();
+            const titleInput = document.getElementById('tx-title').value.trim();
+            const category = currentType === 'expense' ? document.getElementById('tx-category').value : 'ဝင်ငွေ (Income)';
+            const title = currentType === 'expense' ? titleInput : category;
             const amount = parseFloat(document.getElementById('tx-amount').value);
-            const category = document.getElementById('tx-category').value;
             const date = document.getElementById('tx-date').value;
-            const remarks = document.getElementById('tx-remarks').value.trim();
+            const note = document.getElementById('tx-note').value.trim();
 
-            if (isNaN(amount) || amount <= 0) return;
-            if (currentType === 'expense' && !title) return;
+            if (isNaN(amount) || amount <= 0 || (currentType === 'expense' && !titleInput)) return;
 
             if (editingId) {
-                // Edit existing transaction
                 const index = transactions.findIndex(t => t.id === editingId);
                 if (index !== -1) {
                     transactions[index] = {
                         id: editingId,
-                        title: currentType === 'expense' ? title : '',
-                        remarks: currentType === 'income' ? remarks : '',
+                        title,
+                        note,
                         amount,
                         type: currentType,
                         category,
@@ -516,11 +516,10 @@ function doPost(e) {
                 editingId = null;
                 resetFormUI();
             } else {
-                // Create new transaction
                 const newTx = {
                     id: Date.now(),
-                    title: currentType === 'expense' ? title : '',
-                    remarks: currentType === 'income' ? remarks : '',
+                    title,
+                    note,
                     amount,
                     type: currentType,
                     category,
@@ -537,10 +536,10 @@ function doPost(e) {
 
             saveData();
 
-            // Reset Form fields
+            // Clear inputs
             document.getElementById('tx-title').value = '';
             document.getElementById('tx-amount').value = '';
-            document.getElementById('tx-remarks').value = '';
+            document.getElementById('tx-note').value = '';
             document.getElementById('tx-date').valueAsDate = new Date();
         }
 
@@ -551,14 +550,10 @@ function doPost(e) {
             editingId = id;
             setType(tx.type);
             document.getElementById('tx-date').value = tx.date;
+            document.getElementById('tx-title').value = tx.title || '';
             document.getElementById('tx-category').value = tx.category;
             document.getElementById('tx-amount').value = tx.amount;
-
-            if (tx.type === 'expense') {
-                document.getElementById('tx-title').value = tx.title || '';
-            } else {
-                document.getElementById('tx-remarks').value = tx.remarks || '';
-            }
+            document.getElementById('tx-note').value = tx.note || '';
 
             document.getElementById('submit-btn-text').textContent = 'ပြင်ဆင်ချက်သိမ်းမည်';
             document.getElementById('cancel-edit-btn').classList.remove('hidden');
@@ -570,7 +565,7 @@ function doPost(e) {
             resetFormUI();
             document.getElementById('tx-title').value = '';
             document.getElementById('tx-amount').value = '';
-            document.getElementById('tx-remarks').value = '';
+            document.getElementById('tx-note').value = '';
             document.getElementById('tx-date').valueAsDate = new Date();
         }
 
@@ -602,10 +597,9 @@ function doPost(e) {
             const search = document.getElementById('search').value.toLowerCase();
             const filterType = document.getElementById('filter-type').value;
 
-            // Step 1: Filter by period
             let periodFiltered = filterByPeriod(transactions);
 
-            // Summary Calculations (overall)
+            // Calculate totals
             let totalInc = 0;
             let totalExp = 0;
             let incCount = 0;
@@ -627,15 +621,15 @@ function doPost(e) {
             document.getElementById('income-count').textContent = `${incCount} Transactions`;
             document.getElementById('expense-count').textContent = `${expCount} Transactions`;
 
-            // Step 2: Search & Type Filtering
             const finalFiltered = periodFiltered.filter(t => {
-                const titleStr = (t.title || t.remarks || '').toLowerCase();
-                const matchSearch = titleStr.includes(search) || t.category.toLowerCase().includes(search);
+                const titleStr = (t.title || '').toLowerCase();
+                const noteStr = (t.note || '').toLowerCase();
+                const catStr = (t.category || '').toLowerCase();
+                const matchSearch = titleStr.includes(search) || noteStr.includes(search) || catStr.includes(search);
                 const matchType = filterType === 'ALL' || t.type === filterType;
                 return matchSearch && matchType;
             });
 
-            // Update Graph & Highest Category Analytics
             renderAnalyticsAndChart(periodFiltered);
 
             if (finalFiltered.length === 0) {
@@ -647,41 +641,52 @@ function doPost(e) {
             emptyEl.classList.add('hidden');
             listEl.innerHTML = finalFiltered.map(t => {
                 const isExp = t.type === 'expense';
-                const mainLabel = isExp ? escapeHTML(t.title || 'Expense') : escapeHTML(t.category);
-                const subLabel = isExp ? t.category : (t.remarks ? escapeHTML(t.remarks) : 'Income');
+                const mainLabel = escapeHTML(t.title || (isExp ? 'Expense' : 'Income'));
+                const hasNote = t.note && t.note.trim().length > 0;
 
                 return `
-                    <div class="p-4 sm:px-5 flex items-center justify-between hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                        <div class="flex items-center space-x-3.5">
-                            <div class="h-9 w-9 rounded-2xl ${isExp ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'} flex items-center justify-center text-xs flex-shrink-0">
+                    <div class="p-4 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition gap-3">
+                        <div class="flex items-start space-x-3.5">
+                            <div class="h-9 w-9 rounded-2xl ${isExp ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'} flex items-center justify-center text-xs flex-shrink-0 mt-0.5 sm:mt-0">
                                 <i class="fa-solid ${isExp ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
                             </div>
-                            <div>
-                                <p class="text-xs font-semibold text-slate-800 dark:text-slate-100">${mainLabel}</p>
-                                <div class="flex items-center space-x-2 text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                                    <span>${t.date}</span>
-                                    <span>•</span>
-                                    <span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md font-medium">${subLabel}</span>
+                            <div class="space-y-1">
+                                <p class="text-xs font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                    <span>${mainLabel}</span>
+                                    ${isExp ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md font-normal text-[10px]">${escapeHTML(t.category)}</span>` : ''}
+                                </p>
+                                <div class="flex items-center space-x-2 text-[10px] text-slate-400 dark:text-slate-500">
+                                    <span><i class="fa-regular fa-calendar text-[9px] mr-1"></i>${t.date}</span>
                                 </div>
+                                ${hasNote ? `
+                                    <div class="mt-1 text-[11px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 px-2.5 py-1 rounded-lg border border-amber-200/50 dark:border-amber-900/30 inline-flex items-center gap-1.5 cursor-pointer max-w-md" onclick="showNoteModal(${t.id})">
+                                        <i class="fa-solid fa-note-sticky text-[10px] text-amber-500"></i>
+                                        <span class="truncate">${escapeHTML(t.note)}</span>
+                                        <span class="text-[9px] underline text-amber-600 dark:text-amber-400 ml-1">အပြည့်အစုံဖတ်ရန်</span>
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
-                        <div class="flex items-center space-x-2 sm:space-x-3">
-                            <span class="text-xs font-bold ${isExp ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}">
+
+                        <div class="flex items-center justify-between sm:justify-end space-x-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
+                            <span class="text-xs sm:text-sm font-bold ${isExp ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}">
                                 ${isExp ? '-' : '+'}${t.amount.toLocaleString()} Ks
                             </span>
-                            <button onclick="editTransaction(${t.id})" title="Edit" class="text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 text-xs transition p-1.5">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </button>
-                            <button onclick="deleteTransaction(${t.id})" title="Delete" class="text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 text-xs transition p-1.5">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
+                            <div class="flex items-center space-x-1">
+                                <button onclick="editTransaction(${t.id})" title="Edit" class="text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 text-xs transition p-1.5">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button onclick="deleteTransaction(${t.id})" title="Delete" class="text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 text-xs transition p-1.5">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        // Render Expense Graph and Analytics
+        // Analytics & Chart Rendering
         function renderAnalyticsAndChart(filteredList) {
             const expList = filteredList.filter(t => t.type === 'expense');
             const categorySums = {};
@@ -692,7 +697,6 @@ function doPost(e) {
                 periodExpTotal += t.amount;
             });
 
-            // Find Highest Expense Category
             let maxCat = 'မရှိသေးပါ';
             let maxVal = 0;
             for (const [cat, val] of Object.entries(categorySums)) {
@@ -707,10 +711,8 @@ function doPost(e) {
             const pct = periodExpTotal > 0 ? ((maxVal / periodExpTotal) * 100).toFixed(1) : 0;
             document.getElementById('highest-category-percent').textContent = `ရွေးချယ်ထားသော ကာလ စုစုပေါင်း၏ ${pct}% ရှိပါသည်`;
 
-            // Chart Render
             const labels = Object.keys(categorySums);
             const dataValues = Object.values(categorySums);
-
             const ctx = document.getElementById('expenseChart').getContext('2d');
             
             if (chartInstance) {
@@ -718,25 +720,18 @@ function doPost(e) {
             }
 
             if (labels.length === 0) {
-                // Empty state chart placeholder
                 chartInstance = new Chart(ctx, {
                     type: 'doughnut',
                     data: {
                         labels: ['No Expenses'],
-                        datasets: [{
-                            data: [1],
-                            backgroundColor: ['#e2e8f0']
-                        }]
+                        datasets: [{ data: [1], backgroundColor: ['#e2e8f0'] }]
                     },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
                 });
                 return;
             }
 
-            const chartColors = [
-                '#6366f1', '#ec4899', '#f59e0b', '#10b981', 
-                '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6'
-            ];
+            const chartColors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444'];
 
             chartInstance = new Chart(ctx, {
                 type: 'doughnut',
@@ -764,36 +759,73 @@ function doPost(e) {
             });
         }
 
-        // Export Functions
-        function exportToCSV() {
+        // Pure Excel Download via SheetJS (.xlsx Format)
+        function exportToExcel() {
             if (transactions.length === 0) {
                 showToast('ထုတ်ယူရန် စာရင်းများ မရှိသေးပါ');
                 return;
             }
 
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-            csvContent += "ID,Date,Title/Remarks,Type,Category,Amount\n";
+            const excelData = transactions.map((t, index) => ({
+                "စဉ် (No.)": index + 1,
+                "ရက်စွဲ (Date)": t.date,
+                "ခေါင်းစဉ် (Title)": t.title || '',
+                "အမျိုးအစား (Type)": t.type === 'expense' ? 'Expense (-)' : 'Income (+)',
+                "Category": t.category || '',
+                "ပမာဏ (Amount)": t.amount,
+                "မှတ်ချက်/အသေးစိတ် (Note)": t.note || ''
+            }));
 
-            transactions.forEach(t => {
-                const titleOrRemark = t.type === 'expense' ? (t.title || '') : (t.remarks || '');
-                csvContent += `"${t.id}","${t.date}","${titleOrRemark.replace(/"/g, '""')}","${t.type}","${t.category}","${t.amount}"\n`;
-            });
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses");
 
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `expense_report_${new Date().toISOString().split('T')[0]}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // Auto-width adjustment
+            const max_width = excelData.reduce((w, r) => Math.max(w, r["ခေါင်းစဉ် (Title)"].length), 10);
+            worksheet['!cols'] = [
+                { wch: 8 },  // No
+                { wch: 12 }, // Date
+                { wch: Math.max(max_width, 20) }, // Title
+                { wch: 15 }, // Type
+                { wch: 20 }, // Category
+                { wch: 15 }, // Amount
+                { wch: 30 }  // Note
+            ];
+
+            const fileName = `Expense_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(workbook, fileName);
+            showToast('Excel (.xlsx) ဖိုင်ဒေါင်းလုဒ်ဆွဲပြီးပါပြီ');
         }
 
         function exportToPDF() {
             window.print();
         }
 
+        // Note View Modal Functions
+        function showNoteModal(id) {
+            const tx = transactions.find(t => t.id === id);
+            if (!tx) return;
+
+            document.getElementById('note-modal-title').textContent = tx.title || '-';
+            document.getElementById('note-modal-date').textContent = tx.date;
+            document.getElementById('note-modal-category').textContent = tx.category;
+            
+            const isExp = tx.type === 'expense';
+            const amtEl = document.getElementById('note-modal-amount');
+            amtEl.textContent = `${isExp ? '-' : '+'}${tx.amount.toLocaleString()} Ks`;
+            amtEl.className = `font-bold ${isExp ? 'text-rose-600' : 'text-emerald-600'}`;
+
+            document.getElementById('note-modal-body').textContent = tx.note || 'မှတ်ချက် မရှိပါ။';
+            document.getElementById('note-modal').classList.remove('hidden');
+        }
+
+        function closeNoteModal() {
+            document.getElementById('note-modal').classList.add('hidden');
+        }
+
         // Sync with Google Sheets
         function syncToGoogleSheet(tx, action = 'add') {
+            if (!googleSheetUrl) return;
             const payload = { ...tx, action };
             fetch(googleSheetUrl, {
                 method: 'POST',
@@ -828,9 +860,9 @@ function doPost(e) {
         function showToast(msg) {
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').textContent = msg;
-            toast.classList.remove('translate-y-[-100%]', 'opacity-0');
+            toast.classList.remove('-translate-y-20', 'opacity-0');
             setTimeout(() => {
-                toast.classList.add('translate-y-[-100%]', 'opacity-0');
+                toast.classList.add('-translate-y-20', 'opacity-0');
             }, 2500);
         }
 
